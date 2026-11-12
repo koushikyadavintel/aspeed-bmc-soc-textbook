@@ -1,0 +1,11 @@
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.log
+*.jsonl
+private-chat-extracts/
+node_modules/
+__pycache__/
