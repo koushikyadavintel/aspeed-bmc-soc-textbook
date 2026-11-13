@@ -8,6 +8,8 @@ This volume combines the boot-sequence, OpenBMC-internals, BMC-flash-image, and 
 | [2. D-Bus to Redfish](02_DBus_Sensors_and_Redfish.md) | Discovery, inventory, sensors, associations, API translation |
 | [3. Images and updates](03_Flash_Images_and_Updates.md) | Storage, containers, persistence, update state, image analysis |
 | [4. Bring-up workbook](04_Bringup_Workbook_and_Reference.md) | Evidence-driven diagnosis, labs, acceptance criteria, glossary |
+| [5. Power, SPI flash, and boot walkthrough](05_Power_SPI_Flash_and_Boot_Walkthrough.md) | Standby power, SPI wiring and commands, flash layout, flashing methods, first instruction, stage timeline, dual-flash recovery |
+| [6. Redfish with curl](06_Redfish_Curl_Cheat_Sheet.md) | Discovery, power control, `ResetType` values, safe curl defaults |
 
 **Prerequisites:** basic Linux and the [C volume](../C_Programming_Textbook/00_README.md). Read the [Yocto volume](../Yocto_BMC_Build_Textbook/00_README.md) for how these artifacts are built.
 

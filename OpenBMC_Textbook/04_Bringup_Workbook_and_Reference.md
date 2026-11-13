@@ -80,4 +80,4 @@ The exact tolerances, timings, and supported power states come from platform req
 | Activation | Making an installed firmware version active |
 | Readiness | Evidence that the required function can operate |
 
-Return to [contents](00_README.md), continue to [Yocto](../Yocto_BMC_Build_Textbook/00_README.md), or study [MCTP](../MCTP_Textbook/00_README.md).
+Return to [contents](00_README.md), continue to [5. Power, SPI flash, and boot walkthrough](05_Power_SPI_Flash_and_Boot_Walkthrough.md), [Yocto](../Yocto_BMC_Build_Textbook/00_README.md), or study [MCTP](../MCTP_Textbook/00_README.md).

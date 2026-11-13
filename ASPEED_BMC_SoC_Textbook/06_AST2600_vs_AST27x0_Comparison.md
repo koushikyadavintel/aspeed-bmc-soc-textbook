@@ -36,13 +36,43 @@ AST2600 to AST2700 is a far bigger jump than AST2500 to AST2600. The ISA changes
 - **Boot:** BMCU SPL at flash offset `0x80` → FIT → (inferred) TF-A BL31 → OP-TEE → U-Boot → Linux. Caliptra's exact role is not public.
 - **Variants:** AST2720 (pin-compatible, no VGA/iKVM/DP listed), AST2750 (dual-node), AST1700 (LTPI I/O expander, not a BMC).
 
-## 6.4 Side-by-side table
+## 6.4 Text diagrams
+
+These restate the SVG figures in plain text, for terminals and quick notes.
+
+**AST2600 boot chain** (see [figure 04](images/04_ast2600_boot_flow.svg)):
+
+```text
+Boot ROM ──verify (OTP keys)──► SPL in SRAM (≤60 KB; 64 KB incl. 512 B signature on A1+)
+        └─► U-Boot proper (verified by SPL) ─► Linux FIT ─► OpenBMC
+```
+
+**AST2700 interrupt routing** (see [figure 07](images/07_ast2700_interrupt_routing.svg)):
+
+```text
+Peripherals ─► INTC1 (IO side, 192 inputs, banked INTM outputs) ─┬─► INTC0
+             (up to 2 more INTC1 via LTPI / AST1700)            └─► BMCU APLIC (RISC-V)
+Peripherals ─► INTC0 (128 local inputs) ─► router ─┬─► GICv3 (PSP / A35)
+                                                   ├─► SSP NVIC (M4)
+                                                   └─► TSP NVIC (M4)
+```
+
+**AST2700 boot chain** (see [figure 08](images/08_ast2700_boot_flow.svg)):
+
+```text
+Boot ROM ─► Ibex RISC-V BMCU runs U-Boot SPL (M-mode), from SPI flash offset 0x80
+          └─► loads FIT ─► A35: TF-A BL31 (EL3) ─► OP-TEE ─► U-Boot ─► Linux   [order inferred]
+Caliptra (OCP silicon RoT) participates in the chain — its exact role is not public
+```
+
+## 6.5 Side-by-side table
 
 | Dimension | AST2600 | AST27x0 | Why it matters |
 | --- | --- | --- | --- |
 | Process | 28 nm | 12 nm | Power and performance |
 | Main CPU | 2× Cortex-A7, Armv7-A, 32-bit | 4× Cortex-A35, Armv8-A, AArch64 @ 1.6 GHz | New toolchain, `ARCH=arm64`, new userspace |
 | Coprocessors | 1× Cortex-M3 | 2× Cortex-M4 @ 400 MHz (SSP, TSP) | Real-time offload with Zephyr |
+| L2 cache | not stated in the sources used | 512 KiB shared, 8-way (from DT) | Compare only against datasheet values |
 | First-stage CPU | A7 runs SPL | Ibex RISC-V BMCU runs SPL | RISC-V toolchain and JTAG |
 | Privilege model | Armv7 modes + TrustZone | EL0-EL3, TF-A (PSCI), OP-TEE | Full secure-firmware stack |
 | DRAM | DDR4-1600, 16-bit, 3.2 GB/s | DDR5-3200, 16-bit, 6.4 GB/s | 2× bandwidth for KVM and DMA |
@@ -52,9 +82,11 @@ AST2600 to AST2700 is a far bigger jump than AST2500 to AST2600. The ISA changes
 | Interrupts | GIC + SCU aggregators | GICv3 + INTC0/INTC1, four targets | IRQ numbers depend on target core |
 | IPC | Limited | 3 mailboxes + SW interrupts | Multi-core firmware design |
 | Root of trust | SBC + OTP + `socsec` | Caliptra + BMCU | New provisioning flow |
+| Crypto engines | HACE (hash/AES), ACRY (RSA/ECDSA) | not described in the public sources used; see ASPEED SDK docs | Do not assume AST2600 crypto drivers carry over |
 | PCIe | Endpoint (VGA) | Gen4, root-complex capable | BMC can host devices |
 | USB | USB 2.0 vHub/EHCI | USB 3.2 xHCI + USB 2.0 vHub | Faster virtual media |
 | Storage | SPI NOR, eMMC, SD | + UFS 3.1 | Larger, faster storage |
+| Display / KVM | PCIe 2D VGA, DisplayPort 1.1a, video engine | PCIe 2D VGA + DP 1.1a listed for AST2700; AST2750 lists VGA + iKVM; AST2720 lists none | Check the variant before debugging "missing" KVM |
 | Remote I/O | External CPLD for LTPI | Native LTPI + AST1700 | Simpler DC-SCM designs |
 | CAN | No | 2.0B | — |
 | UARTs | 9 (+4 VUART) | 15 | Console moves (UART12 on EVB) |
@@ -63,7 +95,7 @@ AST2600 to AST2700 is a far bigger jump than AST2500 to AST2600. The ISA changes
 | Linux DT | `arch/arm/.../aspeed-g6.dtsi` | `arch/arm64/.../aspeed-g7-{a35,soc0,soc1}.dtsi` | Mainline still catching up |
 | U-Boot | `mach-aspeed/ast2600` | `mach-aspeed/ast2700` + `ibex-ast2700_defconfig` | Two U-Boot builds |
 
-## 6.5 Porting checklist: AST2600 → AST2700
+## 6.6 Porting checklist: AST2600 → AST2700
 
 1. **Three toolchains:** AArch64 (A35), Arm Cortex-M (M4s), RISC-V (BMCU).
 2. **Image layout:** SPL at flash offset `0x80`, loading a FIT with TF-A, OP-TEE and U-Boot.
@@ -74,7 +106,7 @@ AST2600 to AST2700 is a far bigger jump than AST2500 to AST2600. The ISA changes
 7. **Drivers:** expect the ASPEED SDK kernel for I2C, I3C, MAC, PCIe and video until mainline catches up.
 8. **DC-SCM:** LTPI moves from a CPLD into the SoC ([DC-SCM chapter 7](../DC_SCM_Textbook/07_ASPEED_on_DC_SCM_and_Review.md)).
 
-## 6.6 Bring-up symptom map
+## 6.7 Bring-up symptom map
 
 | Symptom | AST2600, check first | AST2700, check first |
 | --- | --- | --- |
